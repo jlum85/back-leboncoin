@@ -63,7 +63,6 @@ router.post("/user/sign_up", async (req, res) => {
     res.status(400).json({ message: "Error formData Empty" });
   }
 });
-module.exports = router;
 
 router.post("/user/sign_in", async (req, res) => {
   console.log("/user/sign_in");
@@ -85,7 +84,5 @@ router.post("/user/sign_in", async (req, res) => {
   } else {
     res.status(400).json({ message: "Unauthorized" });
   }
-
-  res.json({ message: "test" });
 });
 module.exports = router;
