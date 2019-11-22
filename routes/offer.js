@@ -14,8 +14,6 @@ cloudinary.config({
 
 router.post("/offer/publish", async (req, res) => {
   console.log("/offer/publish");
-  console.log(req.fields);
-  console.log(req.files);
   const { title, description, price } = req.fields;
 
   const authorizationHeader = req.headers.authorization;
@@ -34,6 +32,12 @@ router.post("/offer/publish", async (req, res) => {
     res.status(400).json({ message: "Unauthorized" });
     return;
   }
+
+  // tests
+  // res.json({ message: "test" });
+  // return;
+  // ***************
+  console.log(req.files);
 
   const files = Object.keys(req.files);
   if (files.length) {
@@ -62,7 +66,6 @@ router.post("/offer/publish", async (req, res) => {
           }
           if (Object.keys(results).length === files.length) {
             console.log("end cloudinary");
-            console.log(results);
             // tous les uploads sont terminés, on peut donc envoyer la réponse au client
             try {
               const newOffer = new Offer({
@@ -73,8 +76,7 @@ router.post("/offer/publish", async (req, res) => {
                 pictures: [],
                 creator_id: user._id
               });
-              //newOffer.pictures.push(result.secure_url);
-
+              newOffer.pictures.push(result.secure_url);
               await newOffer.save();
               console.log(newOffer);
 
@@ -98,6 +100,94 @@ router.post("/offer/publish", async (req, res) => {
         }
       );
     });
+  }
+});
+
+// http://localhost:4000/offer/with-count?title=cd&sort=price-asc&skip=0&limit=5
+router.get("/offer/with-count", async (req, res) => {
+  console.log("/offer/with_count");
+  console.log(req.query);
+  const ObjSort = {};
+  const pTitle = req.query.title;
+  const priceMin = req.query.priceMin;
+  const priceMax = req.query.priceMax;
+  const pSort = req.query.sort;
+  const pSkip = req.query.skip;
+  const pLimit = req.query.limit;
+
+  if (pTitle) {
+    ObjSort.title = new RegExp(pTitle, "i"); // insensible à la casse
+  }
+  if (priceMin) {
+    ObjSort.price = {}; // { $gt: " + priceMin + " }";
+    ObjSort.price["$gt"] = priceMin;
+  }
+  if (priceMax) {
+    if (!ObjSort.price) {
+      ObjSort.price = {};
+    }
+    ObjSort.price["$lt"] = priceMax;
+  }
+
+  ["price-desc", "price-asc", "date-desc", "date-asc"];
+  const search = Offer.find(ObjSort);
+  if (pSort === "price-asc") {
+    search.sort({ price: 1 });
+  } else if (pSort === "price-desc") {
+    search.sort({ price: -1 });
+  } else if (pSort === "rating-asc") {
+    created = 1;
+  } else if (pSort === "rating-desc") {
+    created = -1;
+  }
+
+  if (pLimit) {
+    search.limit(Number(pLimit));
+    search.skip(Number(pSkip));
+  }
+
+  const elems = await search;
+  console.log(elems);
+  const newObj = { count: elems.length, offers: elems };
+  console.log(newObj);
+
+  res.json(newObj);
+});
+
+// "http://localhost:3000/offer/" + id
+router.get("/offer/:id", async (req, res) => {
+  console.log("/offer/id");
+
+  const id = req.params.id;
+  console.log(id);
+  if (id) {
+    const offer = await Offer.findById(id);
+    if (offer) {
+      console.log(offer);
+
+      const user = await User.findById(offer.creator_id);
+      if (user) {
+        res.json({
+          _id: offer._id,
+          pictures: offer.pictures,
+          description: offer.description,
+          price: offer.price,
+          creator: {
+            account: {
+              username: user.account.username
+            },
+            _id: offer.creator_id
+          },
+          created: offer.created
+        });
+      } else {
+        res.json(offer);
+      }
+    } else {
+      return res.status(401).json({ error: "Offer not exist" });
+    }
+  } else {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 });
 
