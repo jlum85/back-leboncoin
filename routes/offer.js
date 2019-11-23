@@ -33,14 +33,8 @@ router.post("/offer/publish", async (req, res) => {
     return;
   }
 
-  // tests
-  // res.json({ message: "test" });
-  // return;
-  // ***************
-  console.log(req.files);
-
   const files = Object.keys(req.files);
-  if (files.length) {
+  if (files.length > 0) {
     const results = {};
     // on parcourt les fichiers
     files.forEach(fileKey => {
@@ -85,7 +79,7 @@ router.post("/offer/publish", async (req, res) => {
                 title: newOffer.title,
                 description: newOffer.description,
                 price: newOffer.price,
-                // pictures: newOffer.pictures,
+                pictures: newOffer.pictures,
                 creator: {
                   account: {
                     username: user.account.username
@@ -100,6 +94,33 @@ router.post("/offer/publish", async (req, res) => {
         }
       );
     });
+  } else {
+    try {
+      const newOffer = new Offer({
+        title: title,
+        description: description,
+        price: price,
+        token: token,
+        pictures: [],
+        creator_id: user._id
+      });
+      await newOffer.save();
+
+      res.json({
+        _id: newOffer._id,
+        title: newOffer.title,
+        description: newOffer.description,
+        price: newOffer.price,
+        creator: {
+          account: {
+            username: user.account.username
+          },
+          _id: user.creator_id
+        }
+      });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   }
 });
 
