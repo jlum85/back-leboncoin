@@ -150,16 +150,15 @@ router.get("/offer/with-count", async (req, res) => {
     ObjSort.price["$lt"] = priceMax;
   }
 
-  ["price-desc", "price-asc", "date-desc", "date-asc"];
   const search = Offer.find(ObjSort);
   if (pSort === "price-asc") {
     search.sort({ price: 1 });
   } else if (pSort === "price-desc") {
     search.sort({ price: -1 });
-  } else if (pSort === "rating-asc") {
-    created = 1;
-  } else if (pSort === "rating-desc") {
-    created = -1;
+  } else if (pSort === "date-asc") {
+    search.sort({ created: 1 });
+  } else if (pSort === "date-desc") {
+    search.sort({ created: -1 });
   }
 
   if (pLimit) {
@@ -168,7 +167,7 @@ router.get("/offer/with-count", async (req, res) => {
   }
 
   const elems = await search;
-  console.log(elems);
+  // console.log(elems);
   const newObj = { count: elems.length, offers: elems };
   console.log(newObj);
 
