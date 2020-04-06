@@ -211,4 +211,37 @@ router.get("/offer/:id", async (req, res) => {
   }
 });
 
+router.get("/offers", async (req, res) => {
+  try {
+    const sort = req.query.sort;
+    let list = {};
+    //const filters = createFilters(req);
+    const filters = {};
+    let search = Offer.find(filters).populate("creator");
+    if (sort) {
+      if (sort === "price-asc") {
+        search.sort((a, b) => (a.price > b.price ? 1 : -1));
+      } else if (sort === "price-desc") {
+        search.sort((a, b) => (a.price < b.price ? 1 : -1));
+      } else if (sort === "date-desc") {
+        search.sort((a, b) => (a.created < b.created ? 1 : -1));
+      } else if (sort === "date-asc") {
+        search.sort((a, b) => (a.created > b.created ? 1 : -1));
+      }
+    }
+    if (req.query.page) {
+      const page = req.query.page;
+      const limit = 2;
+      console.log(search);
+      search.limit(limit).skip(limit * (page - 1));
+    }
+    const offers = await search;
+    list.offers = offers;
+    list.count = offers.length;
+    res.json(list);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;
